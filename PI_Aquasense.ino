@@ -6,44 +6,44 @@
 #include <SD.h>
 #include "leds.h"
 
-// Configurações do MQTT
-const char* mqtt_server = "0.tcp.sa.ngrok.io";
-const int mqtt_port = 18623;
-const char* mqtt_topic = "sensor/dados";
-const char* mqtt_log_topic = "falhas";
-const char* mqtt_user = "eder";
-const char* mqtt_password = "310104";
 
-// Objetos para Wi-Fi e MQTT
+const char* mqtt_server = "seu broker";
+const int mqtt_port = "porta";
+const char* mqtt_topic = "collection";
+const char* mqtt_log_topic = "falhas";
+const char* mqtt_user = "seu usuario";
+const char* mqtt_password = "sua senha";
+
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-// Pinos dos sensores
+
 #define SD_CS_PIN 4  // Pino CS do cartão SD
 #define TEMP_PIN 34
 #define TRIG_PIN 13
 #define ECHO_PIN 12
 #define TDS_PIN 32
 
-// Parâmetros do sensor NTC10K
+// sensor NTC10
 double Vs = 3.3, R1 = 10000, Beta = 3950, To = 298.15, Ro = 10000;
 double adcMax = 4095.0;
 
 // Calibração do sensor TDS
 const float TDS_FACTOR = 0.5;
 
-// Configuração do LCD 16x2
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // Controle de tempo
 unsigned long ultimaAtualizacaoLCD = 0, ultimaAtualizacaoLEDs = 0, ultimaAtualizacaoMQTT = 0;
 const long intervaloLCD = 3000, intervaloLEDs = 200, intervaloMQTT = 10000;
 
-// Variáveis de controle de conexão
+
 bool conectadoWiFi = false, conectadoMQTT = false;
 unsigned long tempoDesconexao = 0;
 
-// Função para salvar dados no SD
+// salvando dados no SD
 void salvarNoSD(const String &dados) {
     File file = SD.open("/log.txt", FILE_WRITE);
     if (file) {
@@ -54,7 +54,7 @@ void salvarNoSD(const String &dados) {
     }
 }
 
-// Função para gerenciar reconexão MQTT
+
 void reconnectMQTT() {
     int tentativas = 0;
     while (!client.connected() && tentativas < 2) {
@@ -77,7 +77,7 @@ void reconnectMQTT() {
     }
 }
 
-// Leitura do sensor de temperatura (NTC10K)
+// sensor de temperatura (NTC10K
 float lerTemperatura() {
     int leitura = analogRead(TEMP_PIN);
     double Vout = leitura * Vs / adcMax;
@@ -86,7 +86,7 @@ float lerTemperatura() {
     return T - 273.15;
 }
 
-// Leitura do sensor ultrassônico
+// sensor ultrassônico
 float lerDistancia() {
     digitalWrite(TRIG_PIN, LOW);
     delayMicroseconds(2);
@@ -97,7 +97,7 @@ float lerDistancia() {
     return duracao * 0.034 / 2;
 }
 
-// Leitura do sensor TDS
+// sensor TDS
 int lerTDS() {
     int leitura = analogRead(TDS_PIN);
     float tensao = leitura * (3.3 / 4095.0);
@@ -133,16 +133,16 @@ void enviarMQTT(float temperatura, float distancia, int tds) {
 void setup() {
     Serial.begin(115200);
 
-    // Inicializa LCD
+    
     lcd.init();
     lcd.backlight();
 
-    // Configuração dos pinos
+    
     pinMode(TRIG_PIN, OUTPUT);
     pinMode(ECHO_PIN, INPUT);
     pinMode(SD_CS_PIN, OUTPUT);
     
-    // Inicialização do SD no setup
+    
     if (!SD.begin(SD_CS_PIN)) {
         Serial.println("Erro ao inicializar o cartão SD. Tentando novamente...");
         delay(2000);
@@ -151,19 +151,19 @@ void setup() {
             ESP.restart();
         }
     }
-    // Configuração do Wi-Fi
+    
     WiFiManager wifiManager;
     wifiManager.autoConnect("ESP32_AP");
     Serial.println("WiFi conectado.");
     conectadoWiFi = true;
 
-    // Configuração do MQTT
+    
     client.setServer(mqtt_server, mqtt_port);
 
-    // Envia o log na inicialização
+    
     enviarLogMQTT();
     
-    // Inicializa LEDs
+    
     inicializarLEDs();
     Serial.println("LEDs inicializados.");
 }
@@ -182,8 +182,8 @@ void enviarLogMQTT() {
 
     String dadosLog = "";
     while (file.available()) {
-        dadosLog += file.readStringUntil('\n'); // Lê linha por linha
-        dadosLog += "\\n"; // Adiciona quebra de linha visível
+        dadosLog += file.readStringUntil('\n'); 
+        dadosLog += "\\n"; 
     }
     file.close();
 
@@ -195,11 +195,11 @@ void enviarLogMQTT() {
     }
 }
 
-// Loop principal
+
 void loop() {
     unsigned long agora = millis();
 
-    // Verifica conexão Wi-Fi
+    
     if (WiFi.status() != WL_CONNECTED) {
         Serial.println("WiFi desconectado! Salvando log...");
         conectadoWiFi = false;
@@ -209,13 +209,13 @@ void loop() {
         conectadoWiFi = true;
     }
 
-    // Reconexão MQTT se necessário
+    
     if (!client.connected()) {
         reconnectMQTT();
     }
     client.loop();
 
-    // Atualização dos LEDs
+    
     if (agora - ultimaAtualizacaoLEDs >= intervaloLEDs) {
         ultimaAtualizacaoLEDs = agora;
 
@@ -232,7 +232,7 @@ void loop() {
         atualizarLEDs(barra3, valorTds);
     }
 
-    // Atualização do LCD
+    
     if (agora - ultimaAtualizacaoLCD >= intervaloLCD) {
         ultimaAtualizacaoLCD = agora;
         lcd.clear();
@@ -242,7 +242,7 @@ void loop() {
         lcd.print(" C");
     }
 
-    // Envio MQTT ou salvamento no SD
+    
     if (agora - ultimaAtualizacaoMQTT >= intervaloMQTT) {
         ultimaAtualizacaoMQTT = agora;
         enviarMQTT(lerTemperatura(), lerDistancia(), lerTDS());
