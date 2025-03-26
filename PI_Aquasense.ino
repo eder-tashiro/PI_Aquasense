@@ -9,8 +9,8 @@
 
 const char* mqtt_server = "seu broker";
 const int mqtt_port = "porta";
-const char* mqtt_topic = "collection";
-const char* mqtt_log_topic = "falhas";
+const char* mqtt_topic = "topico 1";
+const char* mqtt_log_topic = "topico 2";
 const char* mqtt_user = "seu usuario";
 const char* mqtt_password = "sua senha";
 
